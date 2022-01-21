@@ -3,31 +3,31 @@ origamiLamp2.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000001c0  00000000  00000000  00000094  2**1
+  0 .text         00000200  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000002  00800060  000001c0  00000254  2**0
+  1 .data         00000002  00800060  00000200  00000294  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          00000002  00800062  00800062  00000256  2**0
+  2 .bss          00000002  00800062  00800062  00000296  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  00000256  2**0
+  3 .comment      00000030  00000000  00000000  00000296  2**0
                   CONTENTS, READONLY
-  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000288  2**2
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  000002c8  2**2
                   CONTENTS, READONLY
-  5 .debug_aranges 00000060  00000000  00000000  000002c4  2**0
+  5 .debug_aranges 00000068  00000000  00000000  00000304  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   0000059a  00000000  00000000  00000324  2**0
+  6 .debug_info   00000653  00000000  00000000  0000036c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 00000430  00000000  00000000  000008be  2**0
+  7 .debug_abbrev 00000476  00000000  00000000  000009bf  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   000003b6  00000000  00000000  00000cee  2**0
+  8 .debug_line   0000040c  00000000  00000000  00000e35  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  000000d4  00000000  00000000  000010a4  2**2
+  9 .debug_frame  000000e4  00000000  00000000  00001244  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    00000373  00000000  00000000  00001178  2**0
+ 10 .debug_str    0000038c  00000000  00000000  00001328  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    00000140  00000000  00000000  000014eb  2**0
+ 11 .debug_loc    000001eb  00000000  00000000  000016b4  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000050  00000000  00000000  0000162b  2**0
+ 12 .debug_ranges 00000058  00000000  00000000  0000189f  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -35,13 +35,13 @@ Disassembly of section .text:
 00000000 <__vectors>:
    0:	09 c0       	rjmp	.+18     	; 0x14 <__ctors_end>
    2:	21 c0       	rjmp	.+66     	; 0x46 <__bad_interrupt>
-   4:	c9 c0       	rjmp	.+402    	; 0x198 <__vector_2>
-   6:	87 c0       	rjmp	.+270    	; 0x116 <__vector_3>
+   4:	e9 c0       	rjmp	.+466    	; 0x1d8 <__vector_2>
+   6:	ad c0       	rjmp	.+346    	; 0x162 <__vector_3>
    8:	1e c0       	rjmp	.+60     	; 0x46 <__bad_interrupt>
    a:	1d c0       	rjmp	.+58     	; 0x46 <__bad_interrupt>
    c:	1c c0       	rjmp	.+56     	; 0x46 <__bad_interrupt>
    e:	1b c0       	rjmp	.+54     	; 0x46 <__bad_interrupt>
-  10:	9e c0       	rjmp	.+316    	; 0x14e <__vector_8>
+  10:	be c0       	rjmp	.+380    	; 0x18e <__vector_8>
   12:	19 c0       	rjmp	.+50     	; 0x46 <__bad_interrupt>
 
 00000014 <__ctors_end>:
@@ -54,8 +54,8 @@ Disassembly of section .text:
   1c:	10 e0       	ldi	r17, 0x00	; 0
   1e:	a0 e6       	ldi	r26, 0x60	; 96
   20:	b0 e0       	ldi	r27, 0x00	; 0
-  22:	e0 ec       	ldi	r30, 0xC0	; 192
-  24:	f1 e0       	ldi	r31, 0x01	; 1
+  22:	e0 e0       	ldi	r30, 0x00	; 0
+  24:	f2 e0       	ldi	r31, 0x02	; 2
   26:	02 c0       	rjmp	.+4      	; 0x2c <__do_copy_data+0x10>
   28:	05 90       	lpm	r0, Z+
   2a:	0d 92       	st	X+, r0
@@ -76,8 +76,8 @@ Disassembly of section .text:
   3c:	a4 36       	cpi	r26, 0x64	; 100
   3e:	b2 07       	cpc	r27, r18
   40:	e1 f7       	brne	.-8      	; 0x3a <.do_clear_bss_loop>
-  42:	5c d0       	rcall	.+184    	; 0xfc <main>
-  44:	bb c0       	rjmp	.+374    	; 0x1bc <_exit>
+  42:	7b d0       	rcall	.+246    	; 0x13a <main>
+  44:	db c0       	rjmp	.+438    	; 0x1fc <_exit>
 
 00000046 <__bad_interrupt>:
   46:	dc cf       	rjmp	.-72     	; 0x0 <__vectors>
@@ -139,7 +139,7 @@ void inline setup()
 
 void sePCI()					//Enable pin change interrupt to look for movement of tilt sensor
 {
-	GIFR |= 1 << PCIF;		//Clears pin change interrupt flag
+	GIFR |= 1 << PCIF;			//Clears pin change interrupt flag
   7a:	8a b7       	in	r24, 0x3a	; 58
   7c:	80 62       	ori	r24, 0x20	; 32
   7e:	8a bf       	out	0x3a, r24	; 58
@@ -155,283 +155,343 @@ void sePCI()					//Enable pin change interrupt to look for movement of tilt sens
 
 void rampUP()						//Dims the light up
 {
-	TCCR0A |= (1 << COM0A1);			//Sets PINB0 to PWM mode
+	TCCR0A |= (1 << COM0A1);		//Sets PINB0 to PWM mode
   88:	8f b5       	in	r24, 0x2f	; 47
   8a:	80 68       	ori	r24, 0x80	; 128
   8c:	8f bd       	out	0x2f, r24	; 47
-	while(toRampUp>0)
-  8e:	80 91 63 00 	lds	r24, 0x0063	; 0x800063 <toRampUp>
-  92:	88 23       	and	r24, r24
-  94:	a9 f0       	breq	.+42     	; 0xc0 <__stack+0x21>
+	while(OCR0A < 0xff)
+  8e:	86 b7       	in	r24, 0x36	; 54
+  90:	8f 3f       	cpi	r24, 0xFF	; 255
+  92:	61 f0       	breq	.+24     	; 0xac <__stack+0xd>
 	{
-		toRampUp--;
-  96:	80 91 63 00 	lds	r24, 0x0063	; 0x800063 <toRampUp>
-  9a:	81 50       	subi	r24, 0x01	; 1
-  9c:	80 93 63 00 	sts	0x0063, r24	; 0x800063 <toRampUp>
-		if (OCR0A < 0xff) OCR0A++;	//Increments PWM
-  a0:	86 b7       	in	r24, 0x36	; 54
-  a2:	8f 3f       	cpi	r24, 0xFF	; 255
-  a4:	19 f0       	breq	.+6      	; 0xac <__stack+0xd>
-  a6:	86 b7       	in	r24, 0x36	; 54
-  a8:	8f 5f       	subi	r24, 0xFF	; 255
-  aa:	86 bf       	out	0x36, r24	; 54
+		OCR0A++;					//Increments PWM
+  94:	86 b7       	in	r24, 0x36	; 54
+  96:	8f 5f       	subi	r24, 0xFF	; 255
+  98:	86 bf       	out	0x36, r24	; 54
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
-  ac:	8f e7       	ldi	r24, 0x7F	; 127
-  ae:	95 e2       	ldi	r25, 0x25	; 37
-  b0:	01 97       	sbiw	r24, 0x01	; 1
-  b2:	f1 f7       	brne	.-4      	; 0xb0 <__stack+0x11>
-  b4:	00 c0       	rjmp	.+0      	; 0xb6 <__stack+0x17>
-  b6:	00 00       	nop
+  9a:	8f e5       	ldi	r24, 0x5F	; 95
+  9c:	99 e0       	ldi	r25, 0x09	; 9
+  9e:	01 97       	sbiw	r24, 0x01	; 1
+  a0:	f1 f7       	brne	.-4      	; 0x9e <_Z6rampUPv+0x16>
+  a2:	00 c0       	rjmp	.+0      	; 0xa4 <__stack+0x5>
+  a4:	00 00       	nop
 }
 
 void rampUP()						//Dims the light up
 {
-	TCCR0A |= (1 << COM0A1);			//Sets PINB0 to PWM mode
-	while(toRampUp>0)
-  b8:	80 91 63 00 	lds	r24, 0x0063	; 0x800063 <toRampUp>
-  bc:	81 11       	cpse	r24, r1
-  be:	eb cf       	rjmp	.-42     	; 0x96 <_Z6rampUPv+0xe>
+	TCCR0A |= (1 << COM0A1);		//Sets PINB0 to PWM mode
+	while(OCR0A < 0xff)
+  a6:	86 b7       	in	r24, 0x36	; 54
+  a8:	8f 3f       	cpi	r24, 0xFF	; 255
+  aa:	a1 f7       	brne	.-24     	; 0x94 <_Z6rampUPv+0xc>
 	{
-		toRampUp--;
-		if (OCR0A < 0xff) OCR0A++;	//Increments PWM
-		_delay_ms(32);				//Pauses for 16ms each time for a total of 255 * 16ms = 4080ms or 4.080sec for dimming to full brightness and exitig the loop
+		OCR0A++;					//Increments PWM
+		_delay_ms(8);				//Pauses for 8ms each time
 	}
-	sePCI();
-  c0:	dc df       	rcall	.-72     	; 0x7a <_Z5sePCIv>
-  c2:	08 95       	ret
+	sePCI();						//enable 
+  ac:	e6 df       	rcall	.-52     	; 0x7a <_Z5sePCIv>
+  ae:	08 95       	ret
 
-000000c4 <_Z8rampDOWNv>:
+000000b0 <_Z5pauseh>:
 }
 
-void rampDOWN()					//Dims the light down
+void pause(uint8_t sec)		//interruptible pause in seconds, returns if device shaken
 {
-	while (OCR0A > 0x00)
-  c4:	86 b7       	in	r24, 0x36	; 54
-  c6:	88 23       	and	r24, r24
-  c8:	61 f0       	breq	.+24     	; 0xe2 <_Z8rampDOWNv+0x1e>
+	uint16_t i = sec*50;
+  b0:	90 e0       	ldi	r25, 0x00	; 0
+  b2:	9c 01       	movw	r18, r24
+  b4:	22 0f       	add	r18, r18
+  b6:	33 1f       	adc	r19, r19
+  b8:	22 0f       	add	r18, r18
+  ba:	33 1f       	adc	r19, r19
+  bc:	82 0f       	add	r24, r18
+  be:	93 1f       	adc	r25, r19
+  c0:	9c 01       	movw	r18, r24
+  c2:	22 0f       	add	r18, r18
+  c4:	33 1f       	adc	r19, r19
+  c6:	22 0f       	add	r18, r18
+  c8:	33 1f       	adc	r19, r19
+  ca:	82 0f       	add	r24, r18
+  cc:	93 1f       	adc	r25, r19
+  ce:	88 0f       	add	r24, r24
+  d0:	99 1f       	adc	r25, r25
+	while((i > 0) && !toRampUp)
+  d2:	00 97       	sbiw	r24, 0x00	; 0
+  d4:	61 f0       	breq	.+24     	; 0xee <_Z5pauseh+0x3e>
+  d6:	20 91 63 00 	lds	r18, 0x0063	; 0x800063 <toRampUp>
+  da:	21 11       	cpse	r18, r1
+  dc:	08 c0       	rjmp	.+16     	; 0xee <_Z5pauseh+0x3e>
 	{
-		OCR0A--;				//Decrements PWM
-  ca:	86 b7       	in	r24, 0x36	; 54
-  cc:	81 50       	subi	r24, 0x01	; 1
-  ce:	86 bf       	out	0x36, r24	; 54
-  d0:	8f e2       	ldi	r24, 0x2F	; 47
-  d2:	9a e2       	ldi	r25, 0x2A	; 42
-  d4:	01 97       	sbiw	r24, 0x01	; 1
-  d6:	f1 f7       	brne	.-4      	; 0xd4 <_Z8rampDOWNv+0x10>
-  d8:	00 c0       	rjmp	.+0      	; 0xda <_Z8rampDOWNv+0x16>
-  da:	00 00       	nop
-	sePCI();
+		i--;
+  de:	01 97       	sbiw	r24, 0x01	; 1
+  e0:	ef e6       	ldi	r30, 0x6F	; 111
+  e2:	f7 e1       	ldi	r31, 0x17	; 23
+  e4:	31 97       	sbiw	r30, 0x01	; 1
+  e6:	f1 f7       	brne	.-4      	; 0xe4 <_Z5pauseh+0x34>
+  e8:	00 c0       	rjmp	.+0      	; 0xea <_Z5pauseh+0x3a>
+  ea:	00 00       	nop
+  ec:	f2 cf       	rjmp	.-28     	; 0xd2 <_Z5pauseh+0x22>
+  ee:	08 95       	ret
+
+000000f0 <_Z8rampDOWNv>:
+		_delay_ms(20);
+	}
 }
 
-void rampDOWN()					//Dims the light down
+void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
 {
-	while (OCR0A > 0x00)
-  dc:	86 b7       	in	r24, 0x36	; 54
-  de:	81 11       	cpse	r24, r1
-  e0:	f4 cf       	rjmp	.-24     	; 0xca <_Z8rampDOWNv+0x6>
+  f0:	9b e9       	ldi	r25, 0x9B	; 155
+	uint8_t i = 0;
+	while ((i < 155) && !toRampUp &&(OCR0A > 0) )
+  f2:	80 91 63 00 	lds	r24, 0x0063	; 0x800063 <toRampUp>
+  f6:	81 11       	cpse	r24, r1
+  f8:	13 c0       	rjmp	.+38     	; 0x120 <_Z8rampDOWNv+0x30>
+  fa:	86 b7       	in	r24, 0x36	; 54
+  fc:	81 11       	cpse	r24, r1
+  fe:	05 c0       	rjmp	.+10     	; 0x10a <_Z8rampDOWNv+0x1a>
+ 100:	0f c0       	rjmp	.+30     	; 0x120 <_Z8rampDOWNv+0x30>
 	{
-		OCR0A--;				//Decrements PWM
-		_delay_ms(36);			//Pauses for 16ms each time for a total of 255 * 16ms = 4080ms or 4.080sec for dimming to the lowest brightness and exitig the loop
+		i++;
+		OCR0A--;								//Decrements PWM
+		_delay_ms(36);							//Pauses for 36ms each time
 	}
-	TCCR0A &= ~(1 << COM0A1);		//Sets PINB0 to normal output mode effectively turning off the light completely, pulling gate to low
-  e2:	8f b5       	in	r24, 0x2f	; 47
-  e4:	8f 77       	andi	r24, 0x7F	; 127
-  e6:	8f bd       	out	0x2f, r24	; 47
-  e8:	08 95       	ret
+	if (OCR0A == 0) TCCR0A &= ~(1 << COM0A1);	//Sets PINB0 to normal output mode effectively turning off the light completely, pulling gate to low
+ 102:	8f b5       	in	r24, 0x2f	; 47
+ 104:	8f 77       	andi	r24, 0x7F	; 127
+ 106:	8f bd       	out	0x2f, r24	; 47
+}
+ 108:	08 95       	ret
+{
+	uint8_t i = 0;
+	while ((i < 155) && !toRampUp &&(OCR0A > 0) )
+	{
+		i++;
+		OCR0A--;								//Decrements PWM
+ 10a:	86 b7       	in	r24, 0x36	; 54
+ 10c:	81 50       	subi	r24, 0x01	; 1
+ 10e:	86 bf       	out	0x36, r24	; 54
+ 110:	ef e2       	ldi	r30, 0x2F	; 47
+ 112:	fa e2       	ldi	r31, 0x2A	; 42
+ 114:	31 97       	sbiw	r30, 0x01	; 1
+ 116:	f1 f7       	brne	.-4      	; 0x114 <_Z8rampDOWNv+0x24>
+ 118:	00 c0       	rjmp	.+0      	; 0x11a <_Z8rampDOWNv+0x2a>
+ 11a:	00 00       	nop
+ 11c:	91 50       	subi	r25, 0x01	; 1
+}
 
-000000ea <_Z5sleepv>:
+void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
+{
+	uint8_t i = 0;
+	while ((i < 155) && !toRampUp &&(OCR0A > 0) )
+ 11e:	49 f7       	brne	.-46     	; 0xf2 <_Z8rampDOWNv+0x2>
+	{
+		i++;
+		OCR0A--;								//Decrements PWM
+		_delay_ms(36);							//Pauses for 36ms each time
+	}
+	if (OCR0A == 0) TCCR0A &= ~(1 << COM0A1);	//Sets PINB0 to normal output mode effectively turning off the light completely, pulling gate to low
+ 120:	86 b7       	in	r24, 0x36	; 54
+ 122:	88 23       	and	r24, r24
+ 124:	71 f3       	breq	.-36     	; 0x102 <_Z8rampDOWNv+0x12>
+ 126:	08 95       	ret
+
+00000128 <_Z5sleepv>:
 }
 
 void sleep()
 {
 	sePCI();					//Enable pin change interrupt for awakening by reading tile sensor
-  ea:	c7 df       	rcall	.-114    	; 0x7a <_Z5sePCIv>
+ 128:	a8 df       	rcall	.-176    	; 0x7a <_Z5sePCIv>
 	sleep_mode();
-  ec:	85 b7       	in	r24, 0x35	; 53
-  ee:	80 62       	ori	r24, 0x20	; 32
-  f0:	85 bf       	out	0x35, r24	; 53
-  f2:	88 95       	sleep
-  f4:	85 b7       	in	r24, 0x35	; 53
-  f6:	8f 7d       	andi	r24, 0xDF	; 223
-  f8:	85 bf       	out	0x35, r24	; 53
-  fa:	08 95       	ret
+ 12a:	85 b7       	in	r24, 0x35	; 53
+ 12c:	80 62       	ori	r24, 0x20	; 32
+ 12e:	85 bf       	out	0x35, r24	; 53
+ 130:	88 95       	sleep
+ 132:	85 b7       	in	r24, 0x35	; 53
+ 134:	8f 7d       	andi	r24, 0xDF	; 223
+ 136:	85 bf       	out	0x35, r24	; 53
+ 138:	08 95       	ret
 
-000000fc <main>:
+0000013a <main>:
 }
 
 int main(void)
 {
-	setup();								//Setting up registers
-  fc:	a5 df       	rcall	.-182    	; 0x48 <_Z5setupv>
+	setup();					//Setting up registers
+ 13a:	86 df       	rcall	.-244    	; 0x48 <_Z5setupv>
     while (1)
     {
-		if (toRampUp)
-  fe:	80 91 63 00 	lds	r24, 0x0063	; 0x800063 <toRampUp>
- 102:	88 23       	and	r24, r24
- 104:	11 f0       	breq	.+4      	; 0x10a <main+0xe>
+		if (toRampUp==1)
+ 13c:	80 91 63 00 	lds	r24, 0x0063	; 0x800063 <toRampUp>
+ 140:	81 30       	cpi	r24, 0x01	; 1
+ 142:	51 f4       	brne	.+20     	; 0x158 <main+0x1e>
 		{
 			rampUP();
- 106:	c0 df       	rcall	.-128    	; 0x88 <_Z6rampUPv>
- 108:	fa cf       	rjmp	.-12     	; 0xfe <main+0x2>
-		}
-		else if (OCR0A <= 32)
- 10a:	86 b7       	in	r24, 0x36	; 54
- 10c:	81 32       	cpi	r24, 0x21	; 33
- 10e:	b8 f7       	brcc	.-18     	; 0xfe <main+0x2>
-		{
+ 144:	a1 df       	rcall	.-190    	; 0x88 <_Z6rampUPv>
+			toRampUp = 0;
+ 146:	10 92 63 00 	sts	0x0063, r1	; 0x800063 <toRampUp>
+			pause(4);
+ 14a:	84 e0       	ldi	r24, 0x04	; 4
+ 14c:	b1 df       	rcall	.-158    	; 0xb0 <_Z5pauseh>
 			rampDOWN();
- 110:	d9 df       	rcall	.-78     	; 0xc4 <_Z8rampDOWNv>
+ 14e:	d0 df       	rcall	.-96     	; 0xf0 <_Z8rampDOWNv>
+			pause(10);
+ 150:	8a e0       	ldi	r24, 0x0A	; 10
+ 152:	ae df       	rcall	.-164    	; 0xb0 <_Z5pauseh>
+			rampDOWN();
+ 154:	cd df       	rcall	.-102    	; 0xf0 <_Z8rampDOWNv>
+ 156:	f2 cf       	rjmp	.-28     	; 0x13c <main+0x2>
+		}
+		else if (OCR0A==0)
+ 158:	86 b7       	in	r24, 0x36	; 54
+ 15a:	81 11       	cpse	r24, r1
+ 15c:	ef cf       	rjmp	.-34     	; 0x13c <main+0x2>
+		{
 			sleep();
- 112:	eb df       	rcall	.-42     	; 0xea <_Z5sleepv>
- 114:	f4 cf       	rjmp	.-24     	; 0xfe <main+0x2>
+ 15e:	e4 df       	rcall	.-56     	; 0x128 <_Z5sleepv>
+ 160:	ed cf       	rjmp	.-38     	; 0x13c <main+0x2>
 
-00000116 <__vector_3>:
+00000162 <__vector_3>:
 		}
     }
 }
 
 ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing needs. The prescalre is set to CLOCK/256. This ISR is called approximately 122 times a second
 {
- 116:	1f 92       	push	r1
- 118:	0f 92       	push	r0
- 11a:	0f b6       	in	r0, 0x3f	; 63
- 11c:	0f 92       	push	r0
- 11e:	11 24       	eor	r1, r1
- 120:	8f 93       	push	r24
+ 162:	1f 92       	push	r1
+ 164:	0f 92       	push	r0
+ 166:	0f b6       	in	r0, 0x3f	; 63
+ 168:	0f 92       	push	r0
+ 16a:	11 24       	eor	r1, r1
+ 16c:	8f 93       	push	r24
 	static uint8_t smallTimer = 0;			//The small timer is incremented 122 times to make up one second
 	
 	smallTimer++;
- 122:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <__data_end>
- 126:	8f 5f       	subi	r24, 0xFF	; 255
+ 16e:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <__data_end>
+ 172:	8f 5f       	subi	r24, 0xFF	; 255
 	if (smallTimer > 37)					//This if is entered once every second
- 128:	86 32       	cpi	r24, 0x26	; 38
- 12a:	18 f4       	brcc	.+6      	; 0x132 <__vector_3+0x1c>
+ 174:	86 32       	cpi	r24, 0x26	; 38
+ 176:	18 f4       	brcc	.+6      	; 0x17e <__vector_3+0x1c>
 
 ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing needs. The prescalre is set to CLOCK/256. This ISR is called approximately 122 times a second
 {
 	static uint8_t smallTimer = 0;			//The small timer is incremented 122 times to make up one second
 	
 	smallTimer++;
- 12c:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <__data_end>
- 130:	08 c0       	rjmp	.+16     	; 0x142 <__vector_3+0x2c>
+ 178:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <__data_end>
+ 17c:	02 c0       	rjmp	.+4      	; 0x182 <__vector_3+0x20>
 	if (smallTimer > 37)					//This if is entered once every second
 	{
 		smallTimer = 0;
- 132:	10 92 62 00 	sts	0x0062, r1	; 0x800062 <__data_end>
-		if (OCR0A > 32) OCR0A--;			//OCR0A is decremented twice a second when the chip is not sleeping
- 136:	86 b7       	in	r24, 0x36	; 54
- 138:	81 32       	cpi	r24, 0x21	; 33
- 13a:	18 f0       	brcs	.+6      	; 0x142 <__vector_3+0x2c>
- 13c:	86 b7       	in	r24, 0x36	; 54
- 13e:	81 50       	subi	r24, 0x01	; 1
- 140:	86 bf       	out	0x36, r24	; 54
+ 17e:	10 92 62 00 	sts	0x0062, r1	; 0x800062 <__data_end>
+		//if (OCR0A > 32) OCR0A--;			//OCR0A is decremented twice a second when the chip is not sleeping
 		//DDRB ^= 1 << PINB0;				//Debugging
 	}
 }
- 142:	8f 91       	pop	r24
- 144:	0f 90       	pop	r0
- 146:	0f be       	out	0x3f, r0	; 63
- 148:	0f 90       	pop	r0
- 14a:	1f 90       	pop	r1
- 14c:	18 95       	reti
+ 182:	8f 91       	pop	r24
+ 184:	0f 90       	pop	r0
+ 186:	0f be       	out	0x3f, r0	; 63
+ 188:	0f 90       	pop	r0
+ 18a:	1f 90       	pop	r1
+ 18c:	18 95       	reti
 
-0000014e <__vector_8>:
+0000018e <__vector_8>:
 
 ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness once every 8sec
 {
- 14e:	1f 92       	push	r1
- 150:	0f 92       	push	r0
- 152:	0f b6       	in	r0, 0x3f	; 63
- 154:	0f 92       	push	r0
- 156:	11 24       	eor	r1, r1
- 158:	8f 93       	push	r24
+ 18e:	1f 92       	push	r1
+ 190:	0f 92       	push	r0
+ 192:	0f b6       	in	r0, 0x3f	; 63
+ 194:	0f 92       	push	r0
+ 196:	11 24       	eor	r1, r1
+ 198:	8f 93       	push	r24
 	static uint8_t lightTimes = 20;				//How many times light has been detected
 	
 	WDTCR |= (1<<WDTIE);						//The watchdog timer interrupt enable bit should be written to 1 every time the watchdog ISR executes. If a watchdog timer overflow occurs and this bit is not set, the chip will reset
- 15a:	81 b5       	in	r24, 0x21	; 33
- 15c:	80 64       	ori	r24, 0x40	; 64
- 15e:	81 bd       	out	0x21, r24	; 33
+ 19a:	81 b5       	in	r24, 0x21	; 33
+ 19c:	80 64       	ori	r24, 0x40	; 64
+ 19e:	81 bd       	out	0x21, r24	; 33
 	//DDRB ^= 1 << PINB0;	//Debugging
 	
 	if (OCR0A) return;							//If the light is on, no commands are executed and the routine returns
- 160:	86 b7       	in	r24, 0x36	; 54
- 162:	81 11       	cpse	r24, r1
- 164:	13 c0       	rjmp	.+38     	; 0x18c <__vector_8+0x3e>
+ 1a0:	86 b7       	in	r24, 0x36	; 54
+ 1a2:	81 11       	cpse	r24, r1
+ 1a4:	13 c0       	rjmp	.+38     	; 0x1cc <__vector_8+0x3e>
  	
 	
 	if (PINB & (1 << PINB2))					//If the photoresistor detects light
- 166:	b2 9b       	sbis	0x16, 2	; 22
- 168:	08 c0       	rjmp	.+16     	; 0x17a <__vector_8+0x2c>
+ 1a6:	b2 9b       	sbis	0x16, 2	; 22
+ 1a8:	08 c0       	rjmp	.+16     	; 0x1ba <__vector_8+0x2c>
 	{
 		if (lightTimes < 20) lightTimes++;		//The lightTimes is incremented until it reaches 10
- 16a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
- 16e:	84 31       	cpi	r24, 0x14	; 20
- 170:	68 f4       	brcc	.+26     	; 0x18c <__vector_8+0x3e>
- 172:	8f 5f       	subi	r24, 0xFF	; 255
- 174:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__DATA_REGION_ORIGIN__>
- 178:	09 c0       	rjmp	.+18     	; 0x18c <__vector_8+0x3e>
+ 1aa:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
+ 1ae:	84 31       	cpi	r24, 0x14	; 20
+ 1b0:	68 f4       	brcc	.+26     	; 0x1cc <__vector_8+0x3e>
+ 1b2:	8f 5f       	subi	r24, 0xFF	; 255
+ 1b4:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__DATA_REGION_ORIGIN__>
+ 1b8:	09 c0       	rjmp	.+18     	; 0x1cc <__vector_8+0x3e>
 	}
 	else if (lightTimes >= 20)					//If the photoresistor does not detect light and there have already been 10 instances of light
- 17a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
- 17e:	84 31       	cpi	r24, 0x14	; 20
- 180:	28 f0       	brcs	.+10     	; 0x18c <__vector_8+0x3e>
+ 1ba:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
+ 1be:	84 31       	cpi	r24, 0x14	; 20
+ 1c0:	28 f0       	brcs	.+10     	; 0x1cc <__vector_8+0x3e>
 	{
 		lightTimes = 0;							//The lightTimes is set to 0 so that the light will not keep turning on when in the dark
- 182:	10 92 60 00 	sts	0x0060, r1	; 0x800060 <__DATA_REGION_ORIGIN__>
-		toRampUp = 152;							//light is to be ramped up at half intensity that will slowly ramp down after 60" (dedicated to my white wolf)
- 186:	88 e9       	ldi	r24, 0x98	; 152
- 188:	80 93 63 00 	sts	0x0063, r24	; 0x800063 <toRampUp>
+ 1c2:	10 92 60 00 	sts	0x0060, r1	; 0x800060 <__DATA_REGION_ORIGIN__>
+		toRampUp = 1;							//light is to be ramped up at half intensity that will slowly ramp down after 60" (dedicated to my white wolf)
+ 1c6:	81 e0       	ldi	r24, 0x01	; 1
+ 1c8:	80 93 63 00 	sts	0x0063, r24	; 0x800063 <toRampUp>
 	}
 }
- 18c:	8f 91       	pop	r24
- 18e:	0f 90       	pop	r0
- 190:	0f be       	out	0x3f, r0	; 63
- 192:	0f 90       	pop	r0
- 194:	1f 90       	pop	r1
- 196:	18 95       	reti
+ 1cc:	8f 91       	pop	r24
+ 1ce:	0f 90       	pop	r0
+ 1d0:	0f be       	out	0x3f, r0	; 63
+ 1d2:	0f 90       	pop	r0
+ 1d4:	1f 90       	pop	r1
+ 1d6:	18 95       	reti
 
-00000198 <__vector_2>:
+000001d8 <__vector_2>:
 
 ISR (PCINT0_vect)								//Pin change interrupt used to read the tilt sensor, wake from sleep and extend ON time
 {
- 198:	1f 92       	push	r1
- 19a:	0f 92       	push	r0
- 19c:	0f b6       	in	r0, 0x3f	; 63
- 19e:	0f 92       	push	r0
- 1a0:	11 24       	eor	r1, r1
- 1a2:	8f 93       	push	r24
+ 1d8:	1f 92       	push	r1
+ 1da:	0f 92       	push	r0
+ 1dc:	0f b6       	in	r0, 0x3f	; 63
+ 1de:	0f 92       	push	r0
+ 1e0:	11 24       	eor	r1, r1
+ 1e2:	8f 93       	push	r24
 	GIMSK |= 1 << PCIE;			//Set pin change interrupt enable bit
 }
 
 inline void clPCI()				//Disables pin change interrupt
 {
 	GIMSK &= ~(1 << PCIE);		//Clear pin change interrupt enable bit
- 1a4:	8b b7       	in	r24, 0x3b	; 59
- 1a6:	8f 7d       	andi	r24, 0xDF	; 223
- 1a8:	8b bf       	out	0x3b, r24	; 59
+ 1e4:	8b b7       	in	r24, 0x3b	; 59
+ 1e6:	8f 7d       	andi	r24, 0xDF	; 223
+ 1e8:	8b bf       	out	0x3b, r24	; 59
 }
 
 ISR (PCINT0_vect)								//Pin change interrupt used to read the tilt sensor, wake from sleep and extend ON time
 {
 	clPCI();									//When the pin change ISR is called, it disables itself with this command. It is then re-enabled in various locations in the code
-	toRampUp = 50;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
- 1aa:	82 e3       	ldi	r24, 0x32	; 50
- 1ac:	80 93 63 00 	sts	0x0063, r24	; 0x800063 <toRampUp>
+	toRampUp = 1;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
+ 1ea:	81 e0       	ldi	r24, 0x01	; 1
+ 1ec:	80 93 63 00 	sts	0x0063, r24	; 0x800063 <toRampUp>
 }
- 1b0:	8f 91       	pop	r24
- 1b2:	0f 90       	pop	r0
- 1b4:	0f be       	out	0x3f, r0	; 63
- 1b6:	0f 90       	pop	r0
- 1b8:	1f 90       	pop	r1
- 1ba:	18 95       	reti
+ 1f0:	8f 91       	pop	r24
+ 1f2:	0f 90       	pop	r0
+ 1f4:	0f be       	out	0x3f, r0	; 63
+ 1f6:	0f 90       	pop	r0
+ 1f8:	1f 90       	pop	r1
+ 1fa:	18 95       	reti
 
-000001bc <_exit>:
- 1bc:	f8 94       	cli
+000001fc <_exit>:
+ 1fc:	f8 94       	cli
 
-000001be <__stop_program>:
- 1be:	ff cf       	rjmp	.-2      	; 0x1be <__stop_program>
+000001fe <__stop_program>:
+ 1fe:	ff cf       	rjmp	.-2      	; 0x1fe <__stop_program>

@@ -58,7 +58,7 @@ void inline setup()
 
 void sePCI()					//Enable pin change interrupt to look for movement of tilt sensor
 {
-	GIFR |= 1 << PCIF;		//Clears pin change interrupt flag
+	GIFR |= 1 << PCIF;			//Clears pin change interrupt flag
 	GIMSK |= 1 << PCIE;			//Set pin change interrupt enable bit
 }
 
@@ -69,24 +69,35 @@ inline void clPCI()				//Disables pin change interrupt
 
 void rampUP()						//Dims the light up
 {
-	TCCR0A |= (1 << COM0A1);			//Sets PINB0 to PWM mode
-	while(toRampUp>0)
+	TCCR0A |= (1 << COM0A1);		//Sets PINB0 to PWM mode
+	while(OCR0A < 0xff)
 	{
-		toRampUp--;
-		if (OCR0A < 0xff) OCR0A++;	//Increments PWM
-		_delay_ms(32);				//Pauses for 16ms each time for a total of 255 * 16ms = 4080ms or 4.080sec for dimming to full brightness and exitig the loop
+		OCR0A++;					//Increments PWM
+		_delay_ms(8);				//Pauses for 8ms each time
 	}
-	sePCI();
+	sePCI();						//enable 
 }
 
-void rampDOWN()					//Dims the light down
+void pause(uint8_t sec)		//interruptible pause in seconds, returns if device shaken
 {
-	while (OCR0A > 0x00)
+	uint16_t i = sec*50;
+	while((i > 0) && !toRampUp)
 	{
-		OCR0A--;				//Decrements PWM
-		_delay_ms(36);			//Pauses for 16ms each time for a total of 255 * 16ms = 4080ms or 4.080sec for dimming to the lowest brightness and exitig the loop
+		i--;
+		_delay_ms(20);
 	}
-	TCCR0A &= ~(1 << COM0A1);		//Sets PINB0 to normal output mode effectively turning off the light completely, pulling gate to low
+}
+
+void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
+{
+	uint8_t i = 0;
+	while ((i < 155) && !toRampUp &&(OCR0A > 0) )
+	{
+		i++;
+		OCR0A--;								//Decrements PWM
+		_delay_ms(36);							//Pauses for 36ms each time
+	}
+	if (OCR0A == 0) TCCR0A &= ~(1 << COM0A1);	//Sets PINB0 to normal output mode effectively turning off the light completely, pulling gate to low
 }
 
 void sleep()
@@ -97,16 +108,20 @@ void sleep()
 
 int main(void)
 {
-	setup();								//Setting up registers
+	setup();					//Setting up registers
     while (1)
     {
-		if (toRampUp)
+		if (toRampUp==1)
 		{
 			rampUP();
-		}
-		else if (OCR0A <= 32)
-		{
+			toRampUp = 0;
+			pause(4);
 			rampDOWN();
+			pause(10);
+			rampDOWN();
+		}
+		else if (OCR0A==0)
+		{
 			sleep();
 		}
     }
@@ -120,7 +135,7 @@ ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing n
 	if (smallTimer > 37)					//This if is entered once every second
 	{
 		smallTimer = 0;
-		if (OCR0A > 32) OCR0A--;			//OCR0A is decremented twice a second when the chip is not sleeping
+		//if (OCR0A > 32) OCR0A--;			//OCR0A is decremented twice a second when the chip is not sleeping
 		//DDRB ^= 1 << PINB0;				//Debugging
 	}
 }
@@ -142,14 +157,14 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	else if (lightTimes >= 20)					//If the photoresistor does not detect light and there have already been 10 instances of light
 	{
 		lightTimes = 0;							//The lightTimes is set to 0 so that the light will not keep turning on when in the dark
-		toRampUp = 152;							//light is to be ramped up at half intensity that will slowly ramp down after 60" (dedicated to my white wolf)
+		toRampUp = 1;							//light is to be ramped up at half intensity that will slowly ramp down after 60" (dedicated to my white wolf)
 	}
 }
 
 ISR (PCINT0_vect)								//Pin change interrupt used to read the tilt sensor, wake from sleep and extend ON time
 {
 	clPCI();									//When the pin change ISR is called, it disables itself with this command. It is then re-enabled in various locations in the code
-	toRampUp = 50;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
+	toRampUp = 1;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
 }
 
 

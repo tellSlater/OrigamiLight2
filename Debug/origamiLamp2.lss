@@ -245,9 +245,9 @@ void pause(uint8_t sec)		//interruptible pause in seconds, returns if device sha
 
 void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
 {
-  f0:	9b e9       	ldi	r25, 0x9B	; 155
+  f0:	9a eb       	ldi	r25, 0xBA	; 186
 	uint8_t i = 0;
-	while ((i < 155) && !toRampUp &&(OCR0A > 0) )
+	while ((i < 186) && !toRampUp && (OCR0A > 0))
   f2:	80 91 63 00 	lds	r24, 0x0063	; 0x800063 <toRampUp>
   f6:	81 11       	cpse	r24, r1
   f8:	13 c0       	rjmp	.+38     	; 0x120 <_Z8rampDOWNv+0x30>
@@ -268,7 +268,7 @@ void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
  108:	08 95       	ret
 {
 	uint8_t i = 0;
-	while ((i < 155) && !toRampUp &&(OCR0A > 0) )
+	while ((i < 186) && !toRampUp && (OCR0A > 0))
 	{
 		i++;
 		OCR0A--;								//Decrements PWM
@@ -287,7 +287,7 @@ void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
 void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
 {
 	uint8_t i = 0;
-	while ((i < 155) && !toRampUp &&(OCR0A > 0) )
+	while ((i < 186) && !toRampUp && (OCR0A > 0))
  11e:	49 f7       	brne	.-46     	; 0xf2 <_Z8rampDOWNv+0x2>
 	{
 		i++;

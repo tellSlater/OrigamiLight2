@@ -10,8 +10,8 @@
  * The state of the chip's fuses should be: (E:FF, H:FF, L:7A).
  *
  *								 _________
- * PIN1 - Not connected		   _|	 O    |_		PIN8 - VCC
- * PIN2	- Virtual GND		   _|		  |_		PIN7 - Light sensor
+ * PIN1 - Virtual GND		   _|	 O    |_		PIN8 - VCC
+ * PIN2	- MCP73831 STAT		   _|		  |_		PIN7 - Light sensor
  * PIN3	- Battery sensing	   _|ATTiny13A|_		PIN6 - Vibration sensor
  * PIN4	- Ground			   _|		  |_		PIN5 - LEDs (PWM)
  *							    |_________|
@@ -30,7 +30,9 @@
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
-volatile uint8_t toRampUp = 0;		//This variable is checked for performing light ramping
+volatile uint8_t toRampUp = 0;		//Checked for performing light ramping
+volatile uint8_t status = 0;		//Status of the light --> 0 - normal function, 1 - low battery function, 2 - charging
+
 
 void inline setup()
 {
@@ -91,7 +93,7 @@ void pause(uint8_t sec)		//interruptible pause in seconds, returns if device sha
 void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
 {
 	uint8_t i = 0;
-	while ((i < 155) && !toRampUp &&(OCR0A > 0) )
+	while ((i < 186) && !toRampUp && (OCR0A > 0))
 	{
 		i++;
 		OCR0A--;								//Decrements PWM

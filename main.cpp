@@ -30,8 +30,8 @@
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
-volatile uint8_t toRampUp = 0;		//Checked for performing light ramping
-volatile uint8_t mode = 0;		//Operating mode of the light --> 0 - normal function, 1 - low battery function, 2 - low low battery function, 3 - charging, 4 - end of charge
+volatile uint8_t g_toRampUp = 0;		//Checked for performing light ramping
+volatile uint8_t g_mode = 0;		//Operating mode of the light --> 0 - normal function, 1 - low battery function, 2 - low low battery function, 3 - charging, 4 - end of charge
 
 
 void inline setup()
@@ -42,7 +42,7 @@ void inline setup()
 	PORTB = 0x00;
 	//DDRB &= ~((1 << PINB1) || (1 << PINB2));						//I/O inputs
 	DDRB |= 1 << PINB0;												//I/O outputs
-	PORTB |= 1 << PINB1;											//PULL UP RESISTOR for input
+	PORTB |= (1 << PINB1);											//PULL UP RESISTOR for input
 	
 	DIDR0 |= (1 << ADC0D) | (1 << ADC2D) | (1 << ADC3D);			//Digital input disable register (disabling digital input where not needed for power saving and better ADC)
 	
@@ -57,9 +57,8 @@ void inline setup()
 	WDTCR |= (1<<WDCE)|(1<<WDE);
 	WDTCR |= (1<<WDTIE) | (1<<WDP3) | (1<<WDP0);
 	
-	ADMUX |= (1 << MUX1) | (1 << MUX0);								//AD multiplexer set to ADC3
-	ADCSRA |= 1 << ADLAR;											//ADCH will contain the MSB of the output
-	
+	ADMUX |= (1 << MUX1) | (1 << MUX0);								//ADC multiplexer set to ADC3
+	//ADCSRA |= 1 << ADLAR;											//ADCL will contain the LSBs of the output, set ADC clock to clock/2
 	
 	sei();
 }
@@ -89,7 +88,7 @@ void rampUP()						//Dims the light up
 void pause(uint8_t sec)		//interruptible pause in seconds, returns if device shaken
 {
 	uint16_t i = sec*50;
-	while((i > 0) && !toRampUp)
+	while((i > 0) && !g_toRampUp)
 	{
 		i--;
 		_delay_ms(20);
@@ -99,7 +98,7 @@ void pause(uint8_t sec)		//interruptible pause in seconds, returns if device sha
 void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
 {
 	uint8_t i = 0;
-	while ((i < 186) && !toRampUp && (OCR0A > 0))
+	while ((i < 186) && !g_toRampUp && (OCR0A > 0))
 	{
 		i++;
 		OCR0A--;								//Decrements PWM
@@ -120,6 +119,7 @@ void blink(uint8_t x)
 		TCCR0A &= ~(1 << COM0A1);
 		--x;
 	}
+	_delay_ms(100);
 	TCCR0A |= (1 << COM0A1);
 }
 
@@ -129,39 +129,88 @@ void sleep()
 	sleep_mode();
 }
 
+inline void ADCVccRef()				//Turns ADC reference to Vcc
+{
+	ADMUX &= ~(1 << REFS0);
+}
+inline void ADCintRef()				//Turns ADC reference to internal
+{
+	ADMUX |= 1 << REFS0;
+}
+
+inline void ADCbat()				//Sets ADC MUX to ADC3, where the battery is
+{
+	ADMUX &= ~(1 << MUX0);
+}
+inline void ADCcharg()				//Sets ADC MUX to ADC2, where the charger STAT pin is
+{
+	ADMUX |= 1 << MUX0;
+}
+
+inline void seADC()					//Turns on ADC
+{
+	ADCSRA |= 1 << ADEN;
+}
+
+inline void clADC()					//Turns off ADC
+{
+	ADCSRA &= ~(1 << ADEN);
+}
+
+void ADCstart()						//ADC start conversion
+{
+	ADCSRA |= 1 << ADSC;
+}
+
+bool ADCcc()						//Returns true if a conversion is complete, false if it is in progress
+{
+	return !((ADCSRA >> ADSC) & 0x01);
+}
+
+inline uint8_t ADCout()				//Returns ADC conversion output - the 8 MSBs of the result which is in the ADCH register
+{
+	return ADC >> 2;
+}
+
 int main(void)
 {
 	setup();					//Setting up registers
+			
+
     while (1)
     {
-		if (mode > 2)
-		{
-			
+		if (g_mode > 2)
+		{			
 			
 		}
 		else
 		{
-			
-			
-		}
-		if (toRampUp==1)
-		{
-			if (mode == 2) blink(2);
-			else
+			if (g_toRampUp==1)
 			{
-				rampUP();
-				toRampUp = 0;
-				if (mode > 0) blink(2);
-				pause(4);
-				if (mode > 0) blink(2);
-				rampDOWN();
-				pause(10);
-				rampDOWN();				
+				if (g_mode == 2)
+				{
+					OCR0A = 124;
+					blink(2);
+					TCCR0A &= ~(1 << COM0A1);
+					g_toRampUp = 0;
+					OCR0A = 0;
+				}
+				else
+				{
+					rampUP();
+					g_toRampUp = 0;
+					if (g_mode > 0) blink(2);
+					pause(4);
+					if (g_mode > 0) blink(2);
+					rampDOWN();
+					pause(10);
+					rampDOWN();
+				}
 			}
-		}
-		else if (OCR0A==0)
-		{
-			sleep();
+			else if (OCR0A==0)
+			{
+				sleep();
+			}
 		}
     }
 }
@@ -179,67 +228,31 @@ ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing n
 	}
 }
 
-inline void ADCVccRef()				//Turns ADC reference to Vcc
-{
-	ADMUX &= ~(1 << REFS0);
-}
-inline void ADCintRef()				//Turns ADC reference to internal
-{
-	ADMUX |= 1 << REFS0;
-}
-
-inline void ADCbat()				//Sets ADC MUX to ADC3, where the battery is
-{
-	ADMUX |= 1 << MUX0;
-}
-inline void ADCcharg()				//Sets ADC MUX to ADC2, where the charger STAT pin is
-{
-	ADMUX &= ~(1 << MUX0);
-}
-
-inline void seADC()					//Turns on ADC
-{
-	ADCSRA |= 1 << ADEN;
-}
-
-inline void clADC()					//Turns off ADC
-{
-	ADCSRA &= ~(1 << ADEN);
-}
-
-void ADCstart()
-{
-	ADCSRA |= 1 << ADSC;
-}
-
-bool ADCcc()						//Returns true if a conversion is complete, false is it is in progress
-{
-	return !((ADCSRA >> ADSC) & 0x01);
-}
-
-inline uint8_t ADCout()				//Returns ADC conversion output - the 8 MSBs of the result which is in the ADCH register
-{
-	return ADCH;
-}
-
-
-
 ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness once every 8sec
 {
+	
 	static uint8_t lightTimes = 20;				//How many times light has been detected
 	
 	//DDRB ^= 1 << PINB0;	//Debugging
-	
-	seADC();
+
+	seADC();									//Using ADC to check the battery voltage
+				
 	ADCbat();
 	ADCintRef();
 	ADCstart();
 	while (!ADCcc()){}
-	if (ADCout() < 120) mode = 2;
-	else if (ADCout() < 160) mode = 1;
-	else mode = 0;
+				
+	if (ADCout() < 187) g_mode = 2;				//Changing mode to normal, low battery or low low battery depending on the reading from the battery
+	else if (ADCout() < 198) g_mode = 1;
+	else g_mode = 0;
+		
 	
+	clADC();									//Disable ADC to save power
 	
+	 
+	
+	WDTCR |= (1<<WDTIE);						//The watchdog timer interrupt enable bit should be written to 1 every time the watchdog ISR executes. If a watchdog timer overflow occurs and this bit is not set, the chip will reset. The bit is cleared automatically every time this interrupr is called.
+
 	if (OCR0A) return;							//If the light is on, no further commands are executed and the routine returns
  	
 	
@@ -250,17 +263,16 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	else if (lightTimes >= 20)					//If the photoresistor does not detect light and there have already been 10 instances of light
 	{
 		lightTimes = 0;							//The lightTimes is set to 0 so that the light will not keep turning on when in the dark
-		toRampUp = 1;							//light is to be ramped up at half intensity that will slowly ramp down after 60" (dedicated to my white wolf)
+		g_toRampUp = 1;							//light is to be ramped up at half intensity that will slowly ramp down after 60" (dedicated to my white wolf)
 	}
-
-	WDTCR |= (1<<WDTIE);						//The watchdog timer interrupt enable bit should be written to 1 every time the watchdog ISR executes. If a watchdog timer overflow occurs and this bit is not set, the chip will reset. The bit is cleared automatically every time this interrupr is called.
+	
 }
 
 ISR (PCINT0_vect)								//Pin change interrupt used to read the tilt sensor, and read the charger's STAT pin
 {
 	clPCI();									//When the pin change ISR is called, it disables itself with this command. It is then re-enabled in various locations in the code
 	
-	toRampUp = 1;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
+	g_toRampUp = 1;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
 }
 
 

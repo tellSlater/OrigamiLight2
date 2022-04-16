@@ -176,11 +176,20 @@ int main(void)
 {
 	setup();					//Setting up registers
 			
-
+	TCCR0A |= (1 << COM0A1);
+	seADC();
     while (1)
     {
-		if (g_mode > 2)
-		{			
+		if (true)//(g_mode > 2)
+		{	
+				ADCbat();
+				ADCintRef();
+				ADCstart();
+				while (!ADCcc()){}
+				
+				if (ADCout() < 138) OCR0A = 2;
+				else if (ADCout() < 155) OCR0A = 10;
+				else OCR0A = 20;
 			
 		}
 		else
@@ -235,19 +244,19 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	
 	//DDRB ^= 1 << PINB0;	//Debugging
 
-	seADC();									//Using ADC to check the battery voltage
-				
-	ADCbat();
-	ADCintRef();
-	ADCstart();
-	while (!ADCcc()){}
-				
-	if (ADCout() < 187) g_mode = 2;				//Changing mode to normal, low battery or low low battery depending on the reading from the battery
-	else if (ADCout() < 198) g_mode = 1;
-	else g_mode = 0;
-		
-	
-	clADC();									//Disable ADC to save power
+// 	seADC();									//Using ADC to check the battery voltage
+// 				
+// 	ADCbat();
+// 	ADCintRef();
+// 	ADCstart();
+// 	while (!ADCcc()){}
+// 				
+// 	if (ADCout() < 187) g_mode = 2;				//Changing mode to normal, low battery or low low battery depending on the reading from the battery
+// 	else if (ADCout() < 198) g_mode = 1;
+// 	else g_mode = 0;
+// 		
+// 	
+// 	clADC();									//Disable ADC to save power
 	
 	 
 	

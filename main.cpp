@@ -18,7 +18,7 @@
  */ 
 
 
-#define F_CPU   1200000
+#define F_CPU   9600000 / 8
 #define BUAD    9600
 #define BRC     ((F_CPU/16/BUAD) - 1)
 
@@ -30,8 +30,9 @@
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
-volatile uint8_t g_toRampUp = 0;		//Checked for performing light ramping
-volatile uint8_t g_mode = 0;		//Operating mode of the light --> 0 - normal function, 1 - low battery function, 2 - low low battery function, 3 - charging, 4 - end of charge
+volatile uint8_t g_LEDtimer = 255;		//Checked for performing light ramping
+volatile uint8_t g_mode = 0;			//Operating mode of the light --> 0 - normal function, 1 - low battery function, 2 - low low battery function, 3 - charging, 4 - end of charge
+volatile bool g_BATalarm = false;		//When set a blinking battery alarm has to be output
 
 
 void inline setup()
@@ -47,7 +48,7 @@ void inline setup()
 	DIDR0 |= (1 << ADC0D) | (1 << ADC2D) | (1 << ADC3D);			//Digital input disable register (disabling digital input where not needed for power saving and better ADC)
 	
 	TCCR0A |=  (1 << WGM01) | (1 << WGM00);							//Waveform Generation Mode... for pin mode PWM ---> |(1 << COM0A1)
-	TCCR0B |= (1 << CS01) | (1 << CS00);							//Timer clock
+	TCCR0B |= (1 << CS01) | (1 << CS00);							//Timer clock prescaled to Fcpu / 64
 	TIMSK0 |= 1 << TOIE0;											//Timer0 overflow interrupt
 	
 	MCUCR |= (1 << SM1) | (1 << SE);								//Sleep mode selection
@@ -74,6 +75,16 @@ inline void clPCI()				//Disables pin change interrupt
 	GIMSK &= ~(1 << PCIE);		//Clear pin change interrupt enable bit
 }
 
+inline void sePWM()
+{
+	TCCR0A |= (1 << COM0A1);
+}
+
+inline void clPWM()
+{
+	TCCR0A &= ~(1 << COM0A1);
+}
+
 void rampUP()						//Dims the light up
 {
 	TCCR0A |= (1 << COM0A1);		//Sets PINB0 to PWM mode
@@ -88,7 +99,7 @@ void rampUP()						//Dims the light up
 void pause(uint8_t sec)		//interruptible pause in seconds, returns if device shaken
 {
 	uint16_t i = sec*50;
-	while((i > 0) && !g_toRampUp)
+	while((i > 0) && !g_LEDtimer)
 	{
 		i--;
 		_delay_ms(20);
@@ -98,7 +109,7 @@ void pause(uint8_t sec)		//interruptible pause in seconds, returns if device sha
 void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
 {
 	uint8_t i = 0;
-	while ((i < 186) && !g_toRampUp && (OCR0A > 0))
+	while ((i < 186) && !g_LEDtimer && (OCR0A > 0))
 	{
 		i++;
 		OCR0A--;								//Decrements PWM
@@ -176,54 +187,72 @@ int main(void)
 {
 	setup();					//Setting up registers
 			
-
+	sePCI();
     while (1)
     {
+	 _delay_ms(14);
+		
+		
+		
 		if (g_mode > 2)
-		{			
+		{
 			
 		}
 		else
 		{
-			if (g_toRampUp==1)
+			if (g_BATalarm)
 			{
-				if (g_mode == 2)
+				if (g_mode > 0)
 				{
-					OCR0A = 124;
-					blink(2);
-					TCCR0A &= ~(1 << COM0A1);
-					g_toRampUp = 0;
-					OCR0A = 0;
+					for (uint8_t i = 0; i<4; ++i )
+					{
+						PORTB ^= 1 << PINB0;
+						_delay_ms(166);
+					}
+					g_BATalarm = false;
+					
+				}
+				sePWM();
+			}
+			
+			if (g_mode == 2) 
+			{
+				clPWM();
+				sleep();
+			}
+			else
+			{
+				if (g_LEDtimer < 9)
+				{
+					if (OCR0A < 255) ++OCR0A;
+				}
+				else if (g_LEDtimer < 100)
+				{
+					if (OCR0A > 80) --OCR0A;
 				}
 				else
 				{
-					rampUP();
-					g_toRampUp = 0;
-					if (g_mode > 0) blink(2);
-					pause(4);
-					if (g_mode > 0) blink(2);
-					rampDOWN();
-					pause(10);
-					rampDOWN();
+					if (OCR0A > 0) --OCR0A;
+					else
+					{
+						clPWM();
+						sleep();
+					}
 				}
-			}
-			else if (OCR0A==0)
-			{
-				sleep();
 			}
 		}
     }
 }
 
-ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing needs. The prescalre is set to CLOCK/256. This ISR is called approximately 122 times a second
+ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing needs. The prescaler is set to CLOCK/256. This ISR is called approximately 122 times a second
 {
 	static uint8_t smallTimer = 0;			//The small timer is incremented 122 times to make up one second
 	
 	smallTimer++;
-	if (smallTimer > 37)					//This if is entered once every second
+	if (smallTimer > 73)					//This if is entered once every second
 	{
 		smallTimer = 0;
-		//if (OCR0A > 32) OCR0A--;			//OCR0A is decremented twice a second when the chip is not sleeping
+		if (g_LEDtimer < 255) g_LEDtimer++;	//OCR0A is decremented once a second when the chip is not sleeping
 		//DDRB ^= 1 << PINB0;				//Debugging
 	}
 }
@@ -231,7 +260,7 @@ ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing n
 ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness once every 8sec
 {
 	
-	static uint8_t lightTimes = 20;				//How many times light has been detected
+	static uint8_t lightTimes = 20;				//Describes how many times light has been detected
 	
 	//DDRB ^= 1 << PINB0;	//Debugging
 
@@ -242,8 +271,8 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	ADCstart();
 	while (!ADCcc()){}
 				
-	if (ADCout() < 187) g_mode = 2;				//Changing mode to normal, low battery or low low battery depending on the reading from the battery
-	else if (ADCout() < 198) g_mode = 1;
+	if (ADCout() < 138) g_mode = 2;				//Changing mode to normal, low battery or low low battery depending on the reading from the battery
+	else if (ADCout() < 155) g_mode = 1;
 	else g_mode = 0;
 		
 	
@@ -258,21 +287,23 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	
 	if (PINB & (1 << PINB2))					//If the photoresistor detects light
 	{
-		if (lightTimes < 20) lightTimes++;		//The lightTimes is incremented until it reaches 10
+		if (lightTimes < 20) lightTimes++;		//The lightTimes is incremented until it reaches 20
 	}
 	else if (lightTimes >= 20)					//If the photoresistor does not detect light and there have already been 10 instances of light
 	{
 		lightTimes = 0;							//The lightTimes is set to 0 so that the light will not keep turning on when in the dark
-		g_toRampUp = 1;							//light is to be ramped up at half intensity that will slowly ramp down after 60" (dedicated to my white wolf)
+		g_LEDtimer = 0;							//light is to be ramped up
+		g_BATalarm = true;
 	}
 	
 }
 
 ISR (PCINT0_vect)								//Pin change interrupt used to read the tilt sensor, and read the charger's STAT pin
 {
-	clPCI();									//When the pin change ISR is called, it disables itself with this command. It is then re-enabled in various locations in the code
+	//clPCI();									//When the pin change ISR is called, it disables itself with this command. It is then re-enabled in various locations in the code
 	
-	g_toRampUp = 1;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
+	g_LEDtimer = 0;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
+	g_BATalarm = true;
 }
 
 

@@ -52,7 +52,7 @@ void inline setup()
 	TIMSK0 |= 1 << TOIE0;											//Timer0 overflow interrupt
 	
 	MCUCR |= (1 << SM1) | (1 << SE);								//Sleep mode selection
-	PCMSK |= (1 << PCINT1);											//Pin change mask
+	PCMSK |= (1 << PCINT1) | (1 << PCINT3);							//Pin change mask, enable PCINT1 and PCINT3
 	
 	MCUSR |= 0;														//Watchdog settings
 	WDTCR |= (1<<WDCE)|(1<<WDE);
@@ -85,58 +85,9 @@ inline void clPWM()
 	TCCR0A &= ~(1 << COM0A1);
 }
 
-void rampUP()						//Dims the light up
+inline void sleep()
 {
-	TCCR0A |= (1 << COM0A1);		//Sets PINB0 to PWM mode
-	while(OCR0A < 0xff)
-	{
-		OCR0A++;					//Increments PWM
-		_delay_ms(8);				//Pauses for 8ms each time
-	}
-	sePCI();						//enable 
-}
-
-void pause(uint8_t sec)		//interruptible pause in seconds, returns if device shaken
-{
-	uint16_t i = sec*50;
-	while((i > 0) && !g_LEDtimer)
-	{
-		i--;
-		_delay_ms(20);
-	}
-}
-
-void rampDOWN()				//Dims the light down 128 PWM steps, returns if device shaken
-{
-	uint8_t i = 0;
-	while ((i < 186) && !g_LEDtimer && (OCR0A > 0))
-	{
-		i++;
-		OCR0A--;								//Decrements PWM
-		_delay_ms(36);							//Pauses for 36ms each time
-	}
-	if (OCR0A == 0) TCCR0A &= ~(1 << COM0A1);	//Sets PINB0 to normal output mode effectively turning off the light completely, pulling gate to low
-}
-
-void blink(uint8_t x)
-{
-	TCCR0A &= ~(1 << COM0A1);
-	
-	while (x > 0)
-	{
-		_delay_ms(100);
-		TCCR0A |= (1 << COM0A1);
-		_delay_ms(100);
-		TCCR0A &= ~(1 << COM0A1);
-		--x;
-	}
-	_delay_ms(100);
-	TCCR0A |= (1 << COM0A1);
-}
-
-void sleep()
-{
-	sePCI();					//Enable pin change interrupt for awakening by reading tile sensor
+	//sePCI();						//Enable pin change interrupt for awakening by reading tile sensor
 	sleep_mode();
 }
 
@@ -183,6 +134,15 @@ inline uint8_t ADCout()				//Returns ADC conversion output - the 8 MSBs of the r
 	return ADC >> 2;
 }
 
+void blink(const uint8_t times)
+{
+	for (uint8_t i = 0; i<(2*times); ++i )
+	{
+		PORTB ^= 1 << PINB0;
+		_delay_ms(166);
+	}
+}
+
 int main(void)
 {
 	setup();					//Setting up registers
@@ -191,9 +151,6 @@ int main(void)
     while (1)
     {
 	 _delay_ms(14);
-		
-		
-		
 		if (g_mode > 2)
 		{
 			
@@ -204,11 +161,7 @@ int main(void)
 			{
 				if (g_mode > 0)
 				{
-					for (uint8_t i = 0; i<4; ++i )
-					{
-						PORTB ^= 1 << PINB0;
-						_delay_ms(166);
-					}
+					blink(2);
 					g_BATalarm = false;
 					
 				}
@@ -259,6 +212,12 @@ ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing n
 
 ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness once every 8sec
 {
+	if (g_mode>2)
+	{
+		
+		
+	}
+	
 	
 	static uint8_t lightTimes = 20;				//Describes how many times light has been detected
 	
@@ -275,16 +234,12 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	else if (ADCout() < 155) g_mode = 1;
 	else g_mode = 0;
 		
-	
 	clADC();									//Disable ADC to save power
-	
-	 
 	
 	WDTCR |= (1<<WDTIE);						//The watchdog timer interrupt enable bit should be written to 1 every time the watchdog ISR executes. If a watchdog timer overflow occurs and this bit is not set, the chip will reset. The bit is cleared automatically every time this interrupr is called.
 
 	if (OCR0A) return;							//If the light is on, no further commands are executed and the routine returns
  	
-	
 	if (PINB & (1 << PINB2))					//If the photoresistor detects light
 	{
 		if (lightTimes < 20) lightTimes++;		//The lightTimes is incremented until it reaches 20
@@ -295,15 +250,36 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 		g_LEDtimer = 0;							//light is to be ramped up
 		g_BATalarm = true;
 	}
-	
 }
 
 ISR (PCINT0_vect)								//Pin change interrupt used to read the tilt sensor, and read the charger's STAT pin
 {
 	//clPCI();									//When the pin change ISR is called, it disables itself with this command. It is then re-enabled in various locations in the code
 	
-	g_LEDtimer = 0;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
-	g_BATalarm = true;
+	if (!(PINB & 1 << PINB3) || g_mode > 2)		//If STAT shows charging stage
+	{		
+		seADC();									//Using ADC to check the battery voltage
+			
+		ADCcharg();
+		ADCVccRef();
+		ADCstart();
+		while (!ADCcc()){}
+		
+		if (ADCout() < 50) g_mode = 3;				//Changing mode to normal, low battery or low low battery depending on the reading from the battery
+		else if (ADCout() < 240) g_mode = lastMode;
+		else g_mode = 4;
+		
+		g_mode = 3;
+		clPWM();
+		blink(3);
+	}
+	else if (g_mode <= 2)
+	{
+		g_LEDtimer = 0;								//Every time the tilt sensor is triggered, the ON time is extended to the maximum (60" chosen as default)
+		g_BATalarm = true;
+	}
+	
 }
+
 
 

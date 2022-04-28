@@ -33,8 +33,7 @@
 volatile uint8_t g_LEDtimer = 255;		//Checked for performing light ramping
 volatile uint8_t g_mode = 0;			//Operating mode of the light --> 0 - normal function, 1 - low battery function, 2 - low low battery function, 3 - charger plugged
 volatile bool g_BATalarm = false;		//When set a blinking battery alarm has to be output
-volatile uint8_t g_sunLock = 0;			//Incremented if light is scene every 8". The device won't operate until this variable reaches 100. This helps during shipping
-#define sunlockLimit 1
+volatile bool g_chargeLock = true;		//Device locked until this becomes false when a charger is inserted for the first time
 
 void inline setup()
 {
@@ -54,21 +53,25 @@ void inline setup()
 	
 	MCUCR |= (1 << SM1) | (1 << SE);								//Sleep mode selection
 	
-	PCMSK |= (1 << PCINT1) | (1 << PCINT3);							//Pin change mask, enable PCINT1 and PCINT3
+	PCMSK |= (1 << PCINT3);// | (1 << PCINT1);						//Pin change mask, enable PCINT3 for charger check
 	
 	MCUSR |= 0;														//Watchdog settings
-	WDTCR |= (1<<WDCE)|(1<<WDE);
+	WDTCR |= (1<<WDCE);//|(1<<WDE);
 	WDTCR |= (1<<WDTIE) | (1<<WDP3) | (1<<WDP0);
 	
-	ADMUX |= (1 << MUX1) | (1 << MUX0);								//ADC multiplexer set to ADC3
+	ADMUX |= (1 << MUX1) | (1 << REFS0);							//ADC multiplexer set to ADC2 with internal reference for reading battery level
 	//ADCSRA |= 1 << ADLAR;											//ADCL will contain the LSBs of the output, set ADC clock to clock/2
 	
 	sei();
 }
 
-void sePCI()					//Enable pin change interrupt to look for movement of tilt sensor
+void clPCIflag()				//Clears pin change interrupt flag
 {
-	GIFR |= 1 << PCIF;			//Clears pin change interrupt flag
+	GIFR |= 1 << PCIF;
+}
+
+void sePCI()					//Enable pin change interrupt
+{
 	GIMSK |= 1 << PCIE;			//Set pin change interrupt enable bit
 }
 
@@ -87,31 +90,14 @@ inline void clPWM()
 	TCCR0A &= ~(1 << COM0A1);
 }
 
-inline void sleep()
+void sleep()
 {
 	//sePCI();						//Enable pin change interrupt for awakening by reading tile sensor
 	OCR0A = 0x00;
+	clPWM();
 	g_LEDtimer = 255;
 	PORTB &= ~(1 << PINB0);
 	sleep_mode();
-}
-
-inline void ADCVccRef()				//Turns ADC reference to Vcc
-{
-	ADMUX &= ~(1 << REFS0);
-}
-inline void ADCintRef()				//Turns ADC reference to internal
-{
-	ADMUX |= 1 << REFS0;
-}
-
-inline void ADCbat()				//Sets ADC MUX to ADC3, where the battery is
-{
-	ADMUX &= ~(1 << MUX0);
-}
-inline void ADCcharg()				//Sets ADC MUX to ADC2, where the charger STAT pin is
-{
-	ADMUX |= 1 << MUX0;
 }
 
 inline void seADC()					//Turns on ADC
@@ -159,12 +145,8 @@ int main(void)
 	setup();					//Setting up registers
 			
 	
-	while(g_sunLock < sunlockLimit)
-	{
-		if (WDTCR & 1 << WDTIE) sleep();
-	}
-	
 	sePCI();
+	
     while (1)
     {
 		
@@ -172,13 +154,13 @@ int main(void)
 		
 		if (g_mode > 2)
 		{
-			clPWM();
 			sleep();
 		}
 		else
 		{
 			if (g_BATalarm)
 			{
+				PORTB &= ~(1 << PINB0);
 				if (g_mode > 0)
 				{
 					blink(2);
@@ -207,7 +189,6 @@ int main(void)
 					if (OCR0A > 0) --OCR0A;
 					else
 					{
-						clPWM();
 						sleep();
 					}
 				}
@@ -231,30 +212,13 @@ ISR (TIM0_OVF_vect)							//Timer 0 overflow interrupt used for all the timing n
 
 ISR (WDT_vect)								//WDT interrupt to wake from sleep and check brightness once every 8sec
 {
-	WDTCR |= (1<<WDTIE);						//The watchdog timer interrupt enable bit should be written to 1 every time the watchdog ISR executes. If a watchdog timer overflow occurs and this bit is not set, the chip will reset. The bit is cleared automatically every time this interrupt is called.
+	//WDTCR |= (1<<WDTIE);						//The watchdog timer interrupt enable bit should be written to 1 every time the watchdog ISR executes. If a watchdog timer overflow occurs and this bit is not set, the chip will reset. The bit is cleared automatically every time this interrupt is called.
 	
-	if (g_sunLock < sunlockLimit)
-	{
-		if (PINB & (1 << PINB2))			//If the photoresistor detects light
-		{
-			++g_sunLock;					//The g_sunLock variable is incremented, unlocking the light when it reaches 100
-		}
-		return;
-	}
-	
-	if (g_mode>2)
-	{
-		return;
-	}
-	
-	
+	if (g_chargeLock || g_mode>2) return;		//If device is locked or charging return	
 	
 	//DDRB ^= 1 << PINB0;	//Debugging
 
 	seADC();									//Using ADC to check the battery voltage
-				
-	ADCbat();
-	ADCintRef();
 	ADCstart();
 	while (!ADCcc()){}
 				
@@ -283,13 +247,28 @@ ISR (WDT_vect)								//WDT interrupt to wake from sleep and check brightness on
 
 ISR (PCINT0_vect)								//Pin change interrupt used to read the tilt sensor, and read the charger's STAT pin
 {
-	//clPCI();									//When the pin change ISR is called, it disables itself with this command. It is then re-enabled in various locations in the code
+	if (g_chargeLock)							//Only this if is executed until a charger is inserted for the first time. At this point only PCINT3 is active in the PCMSK
+	{
+		_delay_ms(1);
+		if (notCharging())
+		{
+			return;
+		}
+		else
+		{
+			g_chargeLock = false;				//Disable lock on device when a charger is plugged in for the first time
+			PCMSK |= 1 << PCINT1;				//Also enables pin change interrupt PCINT1 for vibration sensor reading
+		}
+	}
+	
 	
 	if (notCharging())							//Changing mode to normal, low battery or low low battery depending on the reading from the battery
 	{
 		if (g_mode > 2)
 		{
 			g_mode = 0;
+			_delay_ms(10);						//This small delay helps prevent a second consecutive trigger of this interrupt that would turn on the light
+			clPCIflag();
 		}
 		else
 		{

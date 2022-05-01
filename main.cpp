@@ -272,15 +272,25 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	vGroundON();								//Turning on the virtual ground on pin 5 for battery sense and photo-resistor voltage dividers
 	_delay_ms(5);
 
-	seADC();									//Using ADC to check the battery voltage
-	ADCstart();
-	while (!ADCcc()){}
-				
-	if (ADCout() < 140) g_mode = 2;				//Changing mode to normal, low battery or low low battery depending on the reading from the battery
-	else if (ADCout() < 161) g_mode = 1;
-	else g_mode = 0;
+	static uint8_t batCheckCounter = 0;			//For battery check once in 10 WDT interrupt calls
+	++batCheckCounter;
+	if (batCheckCounter > 10)
+	{
+		batCheckCounter = 0;
 		
-	clADC();									//Disable ADC to save power
+		seADC();									//Using ADC to check the battery voltage
+		
+		ADCstart();
+		while (!ADCcc()){}
+				
+		if (ADCout() < 140) g_mode = 2;				//Changing mode to normal, low battery or low low battery depending on the reading from the battery
+		else if (ADCout() < 161) g_mode = 1;
+		else g_mode = 0;
+		
+		clADC();
+	}									//Disable ADC to save power
+	
+	
 	
 
 	if (OCR0A) return;							//If the light is on, no further commands are executed and the routine returns

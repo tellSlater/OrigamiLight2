@@ -192,7 +192,8 @@ int main(void)
 	
     while (1)
     {
-		_delay_ms(14);				//This while part operates at a slower rate, executing approximately once every 14ms
+		if (g_LEDtimer < 150)			//If the light is operating
+			_delay_ms(14);				//This while part operates at a slower rate, executing once every 14ms
 		
 // 		if (debugFlag)
 // 		{

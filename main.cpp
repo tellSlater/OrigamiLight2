@@ -31,7 +31,7 @@
 #include <avr/wdt.h>
 
 volatile uint8_t g_LEDtimer = 255;		//Checked for performing light ramping
-volatile uint8_t g_mode = 0;			//Operating mode of the light --> 0 - normal function, 1 - low battery function, 2 - low low battery function, 3 - charger plugged
+volatile uint8_t g_mode = 0;			//Operating mode of the light --> 0 - normal function, 1 - low battery function, 2 - low low battery function, 3 - charging
 volatile bool g_BATalarm = false;		//When set a blinking battery alarm has to be output
 volatile bool g_chargeLock = true;		//Device locked until this becomes false when a charger is inserted for the first time
 
@@ -83,20 +83,20 @@ inline void clPCIflag()				//Clears pin change interrupt flag
 
 inline void sePCI()					//Enable pin change interrupt
 {
-	GIMSK |= 1 << PCIE;			//Set pin change interrupt enable bit
+	GIMSK |= 1 << PCIE;				//Set pin change interrupt enable bit
 }
 
-inline void clPCI()				//Disables pin change interrupt
+inline void clPCI()					//Disables pin change interrupt
 {
-	GIMSK &= ~(1 << PCIE);		//Clear pin change interrupt enable bit
+	GIMSK &= ~(1 << PCIE);			//Clear pin change interrupt enable bit
 }
 
-inline void sePWM()				//Set PWM function on PINB0
+inline void sePWM()					//Set PWM function on PINB0
 {
 	TCCR0A |= (1 << COM0A1);
 }
 
-inline void clPWM()				//Set normal function on PINB0
+inline void clPWM()					//Set normal function on PINB0
 {
 	TCCR0A &= ~(1 << COM0A1);
 }
@@ -129,12 +129,12 @@ inline void clADC()					//Turns off ADC
 	ADCSRA &= ~(1 << ADEN);
 }
 
-inline void ADCstart()						//ADC start conversion
+inline void ADCstart()				//ADC start conversion
 {
 	ADCSRA |= 1 << ADSC;
 }
 
-inline bool ADCcc()						//Returns true if a conversion is complete, false if it is in progress
+inline bool ADCcc()					//Returns true if a conversion is complete, false if it is in progress
 {
 	return !((ADCSRA >> ADSC) & 0x01);
 }
@@ -192,8 +192,8 @@ int main(void)
 	
     while (1)
     {
-		if (g_LEDtimer < 150)			//If the light is operating
-			_delay_ms(14);				//This while part operates at a slower rate, executing once every 14ms
+		if (g_LEDtimer < 150)		//If the light is operating
+			_delay_ms(14);			//This while part operates at a slower rate, executing once every 14ms
 		
 // 		if (debugFlag)
 // 		{

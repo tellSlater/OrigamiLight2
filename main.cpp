@@ -59,7 +59,7 @@ void inline setup()
 	
 	MCUSR |= 0x00;													//Watchdog settings
 	WDTCR |= (1<<WDCE);												//Interrupt only mode
-	WDTCR |= (1<<WDTIE) | (1<<WDP3) | (1<<WDP0);					//Once every 8"
+	WDTCR |= (1<<WDTIE) | (1<<WDP3);								//Once every 8"
 	
 	ADMUX |= (1 << MUX1) | (1 << REFS0);							//ADC multiplexer set to ADC2 with internal reference for reading battery level
 	
@@ -192,8 +192,12 @@ int main(void)
 	
     while (1)
     {
-		if (g_LEDtimer < 150)		//If the light is operating
-			_delay_ms(14);			//This while part operates at a slower rate, executing once every 14ms
+		if (g_LEDtimer < 150)			//If the light is operating
+			_delay_ms(14);				//This while part operates at a slower rate, executing once every 14ms
+
+		if (!notCharging())				//If it is charging enter charging mode
+			g_mode = 3;
+		
 		
 // 		if (debugFlag)
 // 		{
@@ -279,7 +283,7 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	{
 		batCheckCounter = 0;
 		
-		seADC();									//Using ADC to check the battery voltage
+		seADC();								//Using ADC to check the battery voltage
 		
 		ADCstart();
 		while (!ADCcc()){}
@@ -291,12 +295,19 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 		clADC();
 	}									//Disable ADC to save power
 	
-	
-	
-
 	if (OCR0A) return;							//If the light is on, no further commands are executed and the routine returns
- 	
+ 
 	static uint8_t lightTimes = 20;				//Describes how many times light has been detected
+	volatile static bool darkTrigger = false;			//If darkness is detected this flag is set and on the next WDT interrupt, the light is turned on
+	
+	if (darkTrigger)
+	{
+		lightTimes = 0;							//The lightTimes is set to 0 so that the light will not keep turning on when in the dark
+		g_LEDtimer = 0;							//light is to be ramped up
+		g_BATalarm = true;
+		darkTrigger = false;
+		return;
+	}
 	
 	if (PINB & (1 << PINB2))					//If the photoresistor detects light
 	{
@@ -304,9 +315,7 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	}
 	else if (lightTimes >= 20)					//If the photoresistor does not detect light and there have already been 10 instances of light
 	{
-		lightTimes = 0;							//The lightTimes is set to 0 so that the light will not keep turning on when in the dark
-		g_LEDtimer = 0;							//light is to be ramped up
-		g_BATalarm = true;
+		darkTrigger = true;
 	}
 }
 
@@ -314,7 +323,7 @@ ISR (PCINT0_vect)								//Pin change interrupt used to read the tilt sensor, an
 {
 	if (g_chargeLock)							//Only this if is executed until a charger is inserted for the first time. At this point only PCINT3 is active in the PCMSK
 	{
-		_delay_ms(1);
+		_delay_ms(10);
 		if (notCharging())
 		{
 			return;

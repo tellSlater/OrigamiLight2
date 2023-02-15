@@ -275,7 +275,7 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	//DDRB ^= 1 << PINB0;	//Debugging
 
 	vGroundON();								//Turning on the virtual ground on pin 5 for battery sense and photo-resistor voltage dividers
-	_delay_ms(5);
+	_delay_ms(1);
 
 	static uint8_t batCheckCounter = 0;			//For battery check once in 10 WDT interrupt calls
 	++batCheckCounter;

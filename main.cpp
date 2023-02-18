@@ -7,7 +7,7 @@
  *
  * Chip used: ATTiny13A
  * The internal oscillator and no prescaling is used for this project.
- * The state of the chip's fuses should be: (E:FF, H:FF, L:7A).
+ * The state of the chip's fuses should be (E:FF, H:FF, L:6A) when not locked.
  *
  *								 _________
  * PIN1 - Virtual GND		   _|	 O    |_		PIN8 - VCC
@@ -69,11 +69,13 @@ void inline setup()
 void vGroundON()					//Pin 5 to GND
 {
 	DDRB |= 1 << PINB5;
+	PORTB &= ~(1 << PINB5);
 }
 
 void vGroundOFF()					//Pin 5 to high Z
 {
 	DDRB &= ~(1 << PINB5);
+	PORTB &= ~(1 << PINB5);
 }
 
 inline void clPCIflag()				//Clears pin change interrupt flag
@@ -275,7 +277,7 @@ ISR (WDT_vect)									//WDT interrupt to wake from sleep and check brightness o
 	//DDRB ^= 1 << PINB0;	//Debugging
 
 	vGroundON();								//Turning on the virtual ground on pin 5 for battery sense and photo-resistor voltage dividers
-	_delay_ms(1);
+	_delay_us(10);
 
 	static uint8_t batCheckCounter = 0;			//For battery check once in 10 WDT interrupt calls
 	++batCheckCounter;
